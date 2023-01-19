@@ -26,7 +26,7 @@ import { DEVICE } from "./matter/common/DeviceTypes";
 import { MdnsBroadcaster } from "./matter/mdns/MdnsBroadcaster";
 import { Network } from "./net/Network";
 import { NetworkNode } from "./net/node/NetworkNode";
-import { commandExecutor } from "./util/CommandLine";
+import { getParameter, commandExecutor } from "./util/CommandLine";
 import { OnOffCluster } from "./matter/cluster/OnOffCluster";
 import { GeneralCommissioningClusterHandler } from "./matter/cluster/server/GeneralCommissioningServer";
 import { OperationalCredentialsClusterHandler } from "./matter/cluster/server/OperationalCredentialsServer";
@@ -43,6 +43,7 @@ import { AdminCommissioningCluster, CommissioningWindowStatus } from "./matter/c
 import { AdminCommissioningHandler } from "./matter/cluster/server/AdminCommissioningServer";
 import { NetworkCommissioningHandler } from "./matter/cluster/server/NetworkCommissioningServer";
 import { FabricIndex } from "./matter/common/FabricIndex";
+import { capitalize } from "./util/String";
 
 // From Chip-Test-DAC-FFF1-8000-0007-Key.der
 const DevicePrivateKey = ByteArray.fromHex("727F1005CBA47ED7822A9D930943621617CFD3B79D9AF528B801ECF9F1992204");
@@ -64,8 +65,10 @@ class Device {
     async start() {
         logger.info(`node-matter@${packageJson.version}`);
 
+        const userDeviceType = getParameter("type") === "socket" ? DEVICE.ON_OFF_PLUGIN_UNIT : DEVICE.ON_OFF_LIGHT;
+
         const deviceName = "Matter test device";
-        const deviceType = 257 /* Dimmable bulb */;
+        const deviceType = userDeviceType.code;
         const vendorName = "node-matter";
         const passcode = 20202021;
         const discriminator = 3840;
@@ -97,14 +100,14 @@ class Device {
             .addBroadcaster(await MdnsBroadcaster.create())
             .addProtocolHandler(secureChannelProtocol)
             .addProtocolHandler(new InteractionServer()
-               .addEndpoint(0x00, DEVICE.ROOT, [
+               .addRootEndpoint([
                    new ClusterServer(BasicInformationCluster, {}, {
                        dataModelRevision: 1,
                        vendorName,
                        vendorId,
                        productName,
                        productId,
-                       nodeLabel: "",
+                       nodeLabel: "node-matter " + capitalize(userDeviceType.name.replace("MA-", "")),
                        hardwareVersion: 0,
                        hardwareVersionString: "0",
                        location: "US",
@@ -171,8 +174,8 @@ class Device {
                         },
                         AdminCommissioningHandler(secureChannelProtocol),
                     )
-                ])
-                .addEndpoint(0x01, DEVICE.ON_OFF_LIGHT, [ onOffClusterServer ])
+               ])
+                .addEndpoint(0x01, [ userDeviceType ], [ onOffClusterServer ])
             )
             .start()
 
