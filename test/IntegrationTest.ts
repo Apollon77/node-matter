@@ -70,9 +70,9 @@ const TIME_START = 1666663000000;
 const fakeTime = new TimeFake(TIME_START);
 
 describe("Integration", () => {
-    var server: MatterDevice;
-    var onOffServer: ClusterServer<typeof OnOffCluster>;
-    var client: MatterController;
+    let server: MatterDevice;
+    let onOffServer: ClusterServer<typeof OnOffCluster>;
+    let client: MatterController;
 
     before(async () => {
         Logger.defaultLogLevel = Level.INFO;
@@ -98,7 +98,7 @@ describe("Integration", () => {
                     new CaseServer(),
                 ))
             .addProtocolHandler(new InteractionServer()
-                .addEndpoint(0x00, DEVICE.ROOT, [
+                .addRootEndpoint([
                     new ClusterServer(BasicInformationCluster, {}, {
                         dataModelRevision: 1,
                         vendorName,
@@ -142,7 +142,7 @@ describe("Integration", () => {
                              certificateDeclaration: CertificateDeclaration,
                      })),
                 ])
-                .addEndpoint(0x01, DEVICE.ON_OFF_LIGHT, [ onOffServer ])
+                .addEndpoint(0x01, [ DEVICE.ON_OFF_LIGHT ], [ onOffServer ])
             );
         server.start();
 

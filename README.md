@@ -23,6 +23,10 @@ npm i -g node-matter
 
 ## Usage
 
+### Simple Matter Device Usage
+
+The simple usage allows you to offer a single Devices. 
+
 ```bash
 matter
 ```
@@ -30,6 +34,7 @@ matter
 This starts a Matter server listening on port 5540.
 
 This first version only includes the OnOff cluster (on/off smart thing, like a plug or a bulb).
+You can use "-type socket" to change the type of the device to a socket, default is a Light bulb. 
 You can use -on and -off parameter to run a script to control something.
 For instance, on a Raspberry Pi, this will turn on / off the red LED:
 

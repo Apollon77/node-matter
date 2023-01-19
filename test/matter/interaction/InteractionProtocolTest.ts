@@ -8,7 +8,6 @@ import assert from "assert";
 import { ClusterServer, InteractionServer } from "../../../src/matter/interaction/InteractionServer";
 import { ReadRequest, DataReport } from "../../../src/matter/interaction/InteractionMessenger";
 import { MessageExchange } from "../../../src/matter/common/MessageExchange";
-import { DEVICE } from "../../../src/matter/common/DeviceTypes";
 import { MatterDevice } from "../../../src/matter/MatterDevice";
 import { BasicInformationCluster } from "../../../src/matter/cluster/BasicInformationCluster";
 import { VendorId } from "../../../src/matter/common/VendorId";
@@ -56,7 +55,7 @@ describe("InteractionProtocol", () => {
     context("handleReadRequest", () => {
         it("replies with attribute values", () => {
             const interactionProtocol = new InteractionServer()
-                .addEndpoint(0, DEVICE.ROOT, [
+                .addRootEndpoint([
                     new ClusterServer(BasicInformationCluster, {}, {
                         dataModelRevision: 1,
                         vendorName: "vendor",

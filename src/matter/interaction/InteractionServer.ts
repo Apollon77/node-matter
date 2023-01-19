@@ -16,11 +16,12 @@ import { AttributeServers, AttributeInitialValues, ClusterServerHandlers } from 
 import { SecureSession } from "../session/SecureSession";
 import { SubscriptionHandler } from "./SubscriptionHandler";
 import { Logger } from "../../log/Logger";
-import { DeviceTypeId } from "../common/DeviceTypeId";
-import { ClusterId } from "../common/ClusterId";
 import { TlvStream, TypeFromBitSchema } from "@project-chip/matter.js";
-import { EndpointNumber } from "../common/EndpointNumber";
+import { Endpoint } from "./Endpoint";
+import { Device, DEVICE } from "../common/DeviceTypes";
 import { capitalize } from "../../util/String";
+import { AtLeastOne } from "../../util/Array";
+import { StatusCode } from "./InteractionMessages";
 
 export const INTERACTION_PROTOCOL_ID = 0x0001;
 
@@ -83,11 +84,13 @@ function toHex(value: number | undefined) {
 const logger = Logger.get("InteractionProtocol");
 
 export class InteractionServer implements ProtocolHandler<MatterDevice> {
-    private readonly endpoints = new Map<number, { name: string, code: number, clusters: Map<number, ClusterServer<any>> }>();
-    private readonly attributes = new Map<string, AttributeServer<any>>();
-    private readonly attributePaths = new Array<Path>();
-    private readonly commands = new Map<string, CommandServer<any, any>>();
-    private readonly commandPaths = new Array<Path>();
+    private endpoints = new Map<number, { deviceTypes: AtLeastOne<Device>, clusters: Map<number, ClusterServer<any>> }>();
+    private attributes = new Map<string, AttributeServer<any>>();
+    private attributePaths = new Array<Path>();
+    private commands = new Map<string, CommandServer<any, any>>();
+    private commandPaths = new Array<Path>();
+
+    private rootEndpoint = new Endpoint(0, [ DEVICE.ROOT ], [], []);
 
     constructor() {}
 
@@ -95,45 +98,19 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
         return INTERACTION_PROTOCOL_ID;
     }
 
-    addEndpoint(endpointId: number, device: {name: string, code: number}, clusters: ClusterServer<any>[]) {
-        // Add the descriptor cluster
-        const descriptorCluster = new ClusterServer(DescriptorCluster, {}, {
-            deviceTypeList: [{revision: 1, type: new DeviceTypeId(device.code)}],
-            serverList: [],
-            clientList: [],
-            partsList: [],
-        }, {});
-        clusters.push(descriptorCluster);
-        descriptorCluster.attributes.serverList.setLocal(clusters.map(({id}) => new ClusterId(id)));
+    addRootEndpoint(clusters: ClusterServer<any>[], childrenEndpoints?: Endpoint[]) {
+        this.rootEndpoint = new Endpoint(0, [ DEVICE.ROOT ], clusters, childrenEndpoints);
+        this.endpoints = this.rootEndpoint.endpoints;
+        this.attributes = this.rootEndpoint.attributes;
+        this.attributePaths = this.rootEndpoint.attributePaths;
+        this.commands = this.rootEndpoint.commands;
+        this.commandPaths = this.rootEndpoint.commandPaths;
 
-        const clusterMap = new Map<number, ClusterServer<any>>();
-        clusters.forEach(cluster => {
-            const { id: clusterId, attributes, commands } = cluster;
-            clusterMap.set(clusterId, cluster);
-            // Add attributes
-            for (const name in attributes) {
-                const attribute = attributes[name];
-                const path = { endpointId, clusterId, id: attribute.id };
-                this.attributes.set(pathToId(path), attribute);
-                this.attributePaths.push(path);
-            }
+        return this;
+    }
 
-            // Add commands
-            commands.forEach(command => {
-                const path = { endpointId, clusterId, id: command.invokeId };
-                this.commands.set(pathToId(path), command);
-                this.commandPaths.push(path);
-            });
-        });
-
-        // Add part list if the endpoint is not root
-        if (endpointId !== 0) {
-            const rootPartsListAttribute: AttributeServer<EndpointNumber[]> | undefined = this.attributes.get(pathToId({endpointId: 0, clusterId: DescriptorCluster.id, id: DescriptorCluster.attributes.partsList.id}));
-            if (rootPartsListAttribute === undefined) throw new Error("The root endpoint should be added first!");
-            rootPartsListAttribute.setLocal([...rootPartsListAttribute.getLocal(), new EndpointNumber(endpointId)]);
-        }
-
-        this.endpoints.set(endpointId, { ...device, clusters: clusterMap });
+    addEndpoint(endpointId: number, deviceTypes: AtLeastOne<Device>, clusters: ClusterServer<any>[]) {
+        this.rootEndpoint.addEndpoint(endpointId, deviceTypes, clusters);
 
         return this;
     }
@@ -233,14 +210,14 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
         if (endpoint === undefined) {
             return `unknown(${toHex(endpointId)})/${toHex(clusterId)}/${toHex(id)}`;
         }
-        const endpointName = `${endpoint.name}(${toHex(endpointId)})`;
+        const endpointName = `${endpoint.deviceTypes[0].name}(${toHex(endpointId)})`;
 
         if (clusterId === undefined) {
             return `${endpointName}/*/${toHex(id)}`;
         }
         const cluster = endpoint.clusters.get(clusterId);
         if (cluster === undefined) {
-            return `${endpointName}/unkown(${toHex(clusterId)})/${toHex(id)}`;
+            return `${endpointName}/unknown(${toHex(clusterId)})/${toHex(id)}`;
         }
         const clusterName = `${cluster.name}(${toHex(clusterId)})`;
 
