@@ -42,6 +42,28 @@ For instance, on a Raspberry Pi, this will turn on / off the red LED:
 matter -on "echo 255 > /sys/class/leds/led1/brightness" -off "echo 0 > /sys/class/leds/led1/brightness"
 ```
 
+Or to offer a socket:
+```bash
+matter -type socket -on "echo 255 > /sys/class/leds/led1/brightness" -off "echo 0 > /sys/class/leds/led1/brightness"
+```
+
+### Matter Bridged Device Usage
+
+A Bridge is used to expose multiple devices at once.
+The usage is as above but with modified parameters:
+* **-num X**: number of devices to expose (default 2)
+* **-typeX socket**: type of the devices to expose as device number X (default Light bulb)
+* **-onX "script"**: script to run when the device number X is turned on
+* **-offX "script"**: script to run when the device number X is turned off
+
+```bash
+matter-bridge -num 2 -on1 "echo 255 > /sys/class/leds/led1/brightness" -off1 "echo 0 > /sys/class/leds/led1/brightness" -type2 socket -on2 "echo 255 > /sys/class/leds/led2/brightness" -off2 "echo 0 > /sys/class/leds/led2/brightness"
+```
+
+The above command exposes two devices under the bridge, one as light, one as socket and executes the respective commands when the devices are turned on or off.
+
+
+### Matter Controller Usage
 **Experimental**
 
 ```bash
