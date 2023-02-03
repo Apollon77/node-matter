@@ -5,19 +5,11 @@
  */
 import { NoStorageMapKeyValueStore } from "./NoStorageMapKeyValueStore";
 
-interface StorageValuePair {
-    type?: string;
-    content: any;
-}
-
 interface StorageEntry {
     key: string;
-    value: StorageValuePair;
+    value: any;
 }
 
-interface StorageOptions {
-    noAutomaticallyStoreOnChange?: boolean;
-}
 export class JsonNoStorageMapKeyValueStore extends NoStorageMapKeyValueStore {
 
     toJsonString(): string {

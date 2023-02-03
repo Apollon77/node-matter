@@ -11,7 +11,7 @@ export class NoStorageMapKeyValueStore implements KeyValueHandler {
     constructor() {}
 
     private buildKeyString(context: string, contextKey: string): string {
-        return `${context}-${contextKey}`;
+        return `${context}$$${contextKey}`;
     }
 
     getContextKey(context: string, contextKey: string, defaultValue: any): any | undefined {
@@ -41,7 +41,7 @@ export class NoStorageMapKeyValueStore implements KeyValueHandler {
 
     deleteContext(context: string): void {
         const keys = Array.from(this.data.keys());
-        keys.filter((key) => key.startsWith(`${context}-`)).forEach((key) => this.data.delete(key));
+        keys.filter((key) => key.startsWith(`${context}$$`)).forEach((key) => this.data.delete(key));
     }
 
 }

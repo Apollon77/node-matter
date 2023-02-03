@@ -11,16 +11,13 @@ export class FakeJsonKeyValueStore extends JsonNoStorageMapKeyValueStore impleme
     private opened = false;
 
     async open(): Promise<void> {
-        console.log('OPEN');
         this.opened = true;
     }
 
     async close(): Promise<void> {
-        console.log('CLOSE CALL');
         if (!this.opened) {
             return;
         }
-        console.log('CLOSE');
         this.opened = false;
     }
 
