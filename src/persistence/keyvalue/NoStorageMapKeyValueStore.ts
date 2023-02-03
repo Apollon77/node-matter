@@ -24,7 +24,7 @@ export class NoStorageMapKeyValueStore implements KeyValueHandler {
 
     getContextKeys(context: string): { key: string, value: any}[] {
         const keys = Array.from(this.data.keys());
-        return keys.filter((key) => key.startsWith(`${context}-`)).map((key) => ({ key: key.substring(context.length + 1), value: this.data.get(key)}));
+        return keys.filter((key) => key.startsWith(`${context}$$`)).map((key) => ({ key: key.substring(context.length + 1), value: this.data.get(key)}));
     }
 
     setContextKey(context: string, contextKey: string, value: any): void {
