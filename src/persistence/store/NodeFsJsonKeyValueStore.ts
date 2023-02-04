@@ -35,13 +35,8 @@ export class NodeFsJsonKeyValueStore extends JsonNoStorageMapKeyValueStore imple
     }
 
     scheduleDataStorage(): void {
-        if (this.options.storageDelay === -1) {
+        if (this.storageTimer || this.options.storageDelay === -1) {
             return;
-        }
-
-        if (this.storageTimer) {
-            this.storageTimer.stop();
-            this.storageTimer = null;
         }
 
         this.storageTimer = Time.getTimer(this.options.storageDelay || STORAGE_DELAY_DEFAULT, () => this.persistData()).start();
